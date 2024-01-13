@@ -1,7 +1,7 @@
-subroutine rebuild_gimp_single(zeta,gimp,fimp)
+subroutine rebuild_gimp_single_n3(zeta,gimp,fimp)
   complex(8),dimension(:)                     :: zeta
-  complex(8),dimension(..)                    :: Gimp
-  complex(8),dimension(..),optional           :: Fimp
+  complex(8),dimension(:,:,:)                    :: Gimp
+  complex(8),dimension(:,:,:),optional           :: Fimp
   integer                                     :: i,L
   logical                                     :: check
   complex(8),dimension(:,:,:,:,:),allocatable :: gf,ff
@@ -24,36 +24,61 @@ subroutine rebuild_gimp_single(zeta,gimp,fimp)
   !
   call deallocate_GFmatrix(impGmatrix)
   !
-  select rank(gimp)
-  rank default; stop "rebuild_gimp ERROR: gimp has a wrong rank"
-  rank (3)
   call assert_shape(gimp,[Nspin*Norb,Nspin*Norb,L],'rebuild_gimp','gimp')
   gimp = nn2so_reshape(gf,Nspin,Norb,L)
-  rank (5)
-  call assert_shape(gimp,[Nspin,Nspin,Norb,Norb,L],'rebuild_gimp','gimp')
-  gimp = gf
-  end select
   if(present(fimp))then
-     select rank(fimp)
-     rank default; stop "rebuild_gimp ERROR: fimp has a wrong rank"
-     rank (3)
      call assert_shape(fimp,[Nspin*Norb,Nspin*Norb,L],'rebuild_gimp','fimp')
      fimp = nn2so_reshape(ff,Nspin,Norb,L)
-     rank (5)
-     call assert_shape(fimp,[Nspin,Nspin,Norb,Norb,L],'rebuild_gimp','fimp')
-     fimp = ff
-     end select
   endif
   return
-end subroutine rebuild_gimp_single
+end subroutine rebuild_gimp_single_n3
+
+subroutine rebuild_gimp_single_n5(zeta,gimp,fimp)
+  complex(8),dimension(:)                     :: zeta
+  complex(8),dimension(:,:,:,:,:)                    :: Gimp
+  complex(8),dimension(:,:,:,:,:),optional           :: Fimp
+  integer                                     :: i,L
+  logical                                     :: check
+  complex(8),dimension(:,:,:,:,:),allocatable :: gf,ff
+  !
+  call ed_read_impGmatrix()
+  !
+  L = size(zeta)
+  allocate(gf(Nspin,Nspin,Norb,Norb,L))
+  allocate(ff(Nspin,Nspin,Norb,Norb,L))
+  !
+  select case(ed_mode)
+  case default;
+     call rebuild_gimp_normal(zeta,gf)
+  case("superc");
+     if(.not.present(fimp))stop "rebuild_gimp ERROR: fimp not present in ed_mode=superc"
+     call rebuild_gimp_superc(zeta,gf,ff)
+  case("nonsu2");
+     call rebuild_gimp_nonsu2(zeta,gf)
+  end select
+  !
+  call deallocate_GFmatrix(impGmatrix)
+  !
+  call assert_shape(gimp,[Nspin,Nspin,Norb,Norb,L],'rebuild_gimp','gimp')
+  gimp = gf
+  if(present(fimp))then
+     call assert_shape(fimp,[Nspin,Nspin,Norb,Norb,L],'rebuild_gimp','fimp')
+     fimp = ff
+  endif
+  return
+end subroutine rebuild_gimp_single_n5
 
 
+!##################################################################
+!##################################################################
+!##################################################################
 
-subroutine rebuild_gimp_ineq(zeta,Nlat,gimp,fimp)
+
+subroutine rebuild_gimp_ineq_n3(zeta,Nlat,gimp,fimp)
   complex(8),dimension(:)                       :: zeta
   integer                                       :: Nlat
-  complex(8),dimension(..)                      :: Gimp
-  complex(8),dimension(..),optional             :: Fimp
+  complex(8),dimension(:,:,:)                      :: Gimp
+  complex(8),dimension(:,:,:),optional             :: Fimp
   integer                                       :: i,ilat,Nineq,L
   logical                                       :: check
   complex(8),dimension(:,:,:,:,:,:),allocatable :: gf,ff
@@ -67,49 +92,104 @@ subroutine rebuild_gimp_ineq(zeta,Nlat,gimp,fimp)
   do ilat = 1, Nineq
      ed_file_suffix=reg(ineq_site_suffix)//str(ilat,site_indx_padding)
      if(present(fimp))then
-        call rebuild_gimp_single(zeta,&
+        call rebuild_gimp_single_n5(zeta,&
              gf(ilat,:,:,:,:,:),&
              ff(ilat,:,:,:,:,:))
      else
-        call rebuild_gimp_single(zeta,&
+        call rebuild_gimp_single_n5(zeta,&
              ff(ilat,:,:,:,:,:))
      endif
   enddo
   call ed_reset_suffix
   !
-  select rank(gimp)
-  rank default; stop "rebuild_gimp ERROR: gimp has a wrong rank"
-  rank (3)
   call assert_shape(gimp,[Nineq*Nspin*Norb,Nineq*Nspin*Norb,L],'rebuild_gimp','gimp')
   gimp = nnn2lso_reshape(gf,Nineq,Nspin,Norb,L)
-  rank (4)
+
+  if(present(fimp))then
+     call assert_shape(fimp,[Nineq*Nspin*Norb,Nineq*Nspin*Norb,L],'rebuild_gimp','fimp')
+     fimp = nnn2lso_reshape(ff,Nineq,Nspin,Norb,L)
+  endif
+  return
+end subroutine rebuild_gimp_ineq_n3
+
+subroutine rebuild_gimp_ineq_n4(zeta,Nlat,gimp,fimp)
+  complex(8),dimension(:)                       :: zeta
+  integer                                       :: Nlat
+  complex(8),dimension(:,:,:,:)                      :: Gimp
+  complex(8),dimension(:,:,:,:),optional             :: Fimp
+  integer                                       :: i,ilat,Nineq,L
+  logical                                       :: check
+  complex(8),dimension(:,:,:,:,:,:),allocatable :: gf,ff
+  !
+  Nineq=Nlat
+  L=size(zeta)
+  !
+  allocate(Gf(Nineq,Nspin,Nspin,Norb,Norb,L))
+  allocate(Ff(Nineq,Nspin,Nspin,Norb,Norb,L))
+  !
+  do ilat = 1, Nineq
+     ed_file_suffix=reg(ineq_site_suffix)//str(ilat,site_indx_padding)
+     if(present(fimp))then
+        call rebuild_gimp_single_n5(zeta,&
+             gf(ilat,:,:,:,:,:),&
+             ff(ilat,:,:,:,:,:))
+     else
+        call rebuild_gimp_single_n5(zeta,&
+             ff(ilat,:,:,:,:,:))
+     endif
+  enddo
+  call ed_reset_suffix
+  !
   call assert_shape(gimp,[Nineq,Nspin*Norb,Nspin*Norb,L],'rebuild_gimp','gimp')
   do ilat=1,Nineq
      gimp(ilat,:,:,:) = nn2so_reshape(gf(ilat,:,:,:,:,:),Nspin,Norb,L)
   enddo
-  rank (6)
-  call assert_shape(gimp,[Nineq,Nspin,Nspin,Norb,Norb,L],'rebuild_gimp','gimp')
-  gimp = gf
-  end select
   if(present(fimp))then
-     select rank(fimp)
-     rank default; stop "rebuild_gimp ERROR: fimp has a wrong rank"
-     rank (3)
-     call assert_shape(fimp,[Nineq*Nspin*Norb,Nineq*Nspin*Norb,L],'rebuild_gimp','fimp')
-     fimp = nnn2lso_reshape(ff,Nineq,Nspin,Norb,L)
-     rank (4)
      call assert_shape(fimp,[Nineq,Nspin*Norb,Nspin*Norb,L],'rebuild_gimp','fimp')
      do ilat=1,Nineq
         fimp(ilat,:,:,:) = nn2so_reshape(ff(ilat,:,:,:,:,:),Nspin,Norb,L)
      enddo
-     rank (6)
-     call assert_shape(fimp,[Nineq,Nspin,Nspin,Norb,Norb,L],'rebuild_gimp','fimp')
-     fimp = ff
-     end select
   endif
   return
-end subroutine rebuild_gimp_ineq
+end subroutine rebuild_gimp_ineq_n4
 
+
+subroutine rebuild_gimp_ineq_n6(zeta,Nlat,gimp,fimp)
+  complex(8),dimension(:)                       :: zeta
+  integer                                       :: Nlat
+  complex(8),dimension(:,:,:,:,:,:)                      :: Gimp
+  complex(8),dimension(:,:,:,:,:,:),optional             :: Fimp
+  integer                                       :: i,ilat,Nineq,L
+  logical                                       :: check
+  complex(8),dimension(:,:,:,:,:,:),allocatable :: gf,ff
+  !
+  Nineq=Nlat
+  L=size(zeta)
+  !
+  allocate(Gf(Nineq,Nspin,Nspin,Norb,Norb,L))
+  allocate(Ff(Nineq,Nspin,Nspin,Norb,Norb,L))
+  !
+  do ilat = 1, Nineq
+     ed_file_suffix=reg(ineq_site_suffix)//str(ilat,site_indx_padding)
+     if(present(fimp))then
+        call rebuild_gimp_single_n5(zeta,&
+             gf(ilat,:,:,:,:,:),&
+             ff(ilat,:,:,:,:,:))
+     else
+        call rebuild_gimp_single_n5(zeta,&
+             ff(ilat,:,:,:,:,:))
+     endif
+  enddo
+  call ed_reset_suffix
+  !
+  call assert_shape(gimp,[Nineq,Nspin,Nspin,Norb,Norb,L],'rebuild_gimp','gimp')
+  gimp = gf
+  if(present(fimp))then
+     call assert_shape(fimp,[Nineq,Nspin,Nspin,Norb,Norb,L],'rebuild_gimp','fimp')
+     fimp = ff
+  endif
+  return
+end subroutine rebuild_gimp_ineq_n6
 
 
 

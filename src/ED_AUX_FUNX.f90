@@ -12,8 +12,11 @@ MODULE ED_AUX_FUNX
 
   !> ED SET HLOC
   interface ed_set_Hloc
-     module procedure :: ed_set_Hloc_single
-     module procedure :: ed_set_Hloc_lattice
+     module procedure :: ed_set_Hloc_single_N2
+     module procedure :: ed_set_Hloc_single_N4
+     module procedure :: ed_set_Hloc_lattice_N2
+     module procedure :: ed_set_Hloc_lattice_N3
+     module procedure :: ed_set_Hloc_lattice_N5
   end interface ed_set_Hloc
 
   interface lso2nnn_reshape
@@ -164,9 +167,9 @@ contains
 
   !+------------------------------------------------------------------+
   !PURPOSE  : Setup Himpurity, the local part of the non-interacting Hamiltonian
-    !+------------------------------------------------------------------+
-  subroutine ed_set_Hloc_single(Hloc)
-    complex(8),dimension(..),intent(in) :: Hloc
+  !+------------------------------------------------------------------+
+  subroutine ed_set_Hloc_single_N2(Hloc)
+    complex(8),dimension(:,:),intent(in) :: Hloc
 #ifdef _DEBUG
     write(Logfile,"(A)")"DEBUG ed_set_Hloc: set impHloc"
 #endif
@@ -174,22 +177,28 @@ contains
     if(allocated(impHloc))deallocate(impHloc)
     allocate(impHloc(Nspin,Nspin,Norb,Norb));impHloc=zero
     !
-    select rank(Hloc)
-    rank default;stop "ED_SET_HLOC ERROR: Hloc has a wrong rank. Accepted: [Nso,Nso] or [Nspin,Nspin,Norb,Norb]"
-    rank (2)                      !Hloc[Nso,Nso]
     call assert_shape(Hloc,[Nspin*Norb,Nspin*Norb],"ed_set_Hloc","Hloc")
     impHloc = so2nn_reshape(Hloc(1:Nspin*Norb,1:Nspin*Norb),Nspin,Norb)
-    rank (4)                      !Hloc[Nspin,Nspin,Norb,Norb]
+    if(ed_verbose>2)call print_hloc(impHloc)
+  end subroutine ed_set_Hloc_single_N2
+
+  subroutine ed_set_Hloc_single_N4(Hloc)
+    complex(8),dimension(:,:,:,:),intent(in) :: Hloc
+#ifdef _DEBUG
+    write(Logfile,"(A)")"DEBUG ed_set_Hloc: set impHloc"
+#endif
+    !
+    if(allocated(impHloc))deallocate(impHloc)
+    allocate(impHloc(Nspin,Nspin,Norb,Norb));impHloc=zero
+    !
     call assert_shape(Hloc,[Nspin,Nspin,Norb,Norb],"ed_set_Hloc","Hloc")
     impHloc = Hloc
-    end select
     if(ed_verbose>2)call print_hloc(impHloc)
-  end subroutine ed_set_Hloc_single
+  end subroutine ed_set_Hloc_single_N4
 
-
-  subroutine ed_set_Hloc_lattice(Hloc,Nlat)
-    complex(8),dimension(..),intent(in) :: Hloc
-    integer                             :: Nlat,ilat
+  subroutine ed_set_Hloc_lattice_N2(Hloc,Nlat)
+    complex(8),dimension(:,:),intent(in) :: Hloc
+    integer                              :: Nlat,ilat
 #ifdef _DEBUG
     write(Logfile,"(A)")"DEBUG ed_set_Hloc: set impHloc"
 #endif
@@ -197,27 +206,41 @@ contains
     if(allocated(Hloc_ineq))deallocate(Hloc_ineq)
     allocate(Hloc_ineq(Nlat,Nspin,Nspin,Norb,Norb));Hloc_ineq=zero
     !
-    select rank(Hloc)
-    rank default;
-    stop "ED_SET_HLOC ERROR: Hloc has a wrong rank. [Nlso,Nlso],[Nlat,Nso,Nso],[Nlat,Nspin,Nspin,Norb,Norb]"
-    !
-    rank (2)
     call assert_shape(Hloc,[Nlat*Nspin*Norb,Nlat*Nspin*Norb],'ed_set_Hloc','Hloc')
     Hloc_ineq  = lso2nnn_reshape(Hloc(1:Nlat*Nspin*Norb,1:Nlat*Nspin*Norb),Nlat,Nspin,Norb)
+  end subroutine ed_set_Hloc_lattice_N2
+
+
+  subroutine ed_set_Hloc_lattice_N3(Hloc,Nlat)
+    complex(8),dimension(:,:,:),intent(in) :: Hloc
+    integer                                :: Nlat,ilat
+#ifdef _DEBUG
+    write(Logfile,"(A)")"DEBUG ed_set_Hloc: set impHloc"
+#endif
     !
-    rank (3)
+    if(allocated(Hloc_ineq))deallocate(Hloc_ineq)
+    allocate(Hloc_ineq(Nlat,Nspin,Nspin,Norb,Norb));Hloc_ineq=zero
+    !
     call assert_shape(Hloc,[Nlat,Nspin*Norb,Nspin*Norb],'ed_set_Hloc','Hloc')
     do ilat=1,Nlat
        Hloc_ineq(ilat,:,:,:,:)  = so2nn_reshape(Hloc(ilat,1:Nspin*Norb,1:Nspin*Norb),Nspin,Norb)
     enddo
     !
-    rank (5)
+  end subroutine ed_set_Hloc_lattice_N3
+
+  subroutine ed_set_Hloc_lattice_N5(Hloc,Nlat)
+    complex(8),dimension(:,:,:,:,:),intent(in) :: Hloc
+    integer                                    :: Nlat,ilat
+#ifdef _DEBUG
+    write(Logfile,"(A)")"DEBUG ed_set_Hloc: set impHloc"
+#endif
+    !
+    if(allocated(Hloc_ineq))deallocate(Hloc_ineq)
+    allocate(Hloc_ineq(Nlat,Nspin,Nspin,Norb,Norb));Hloc_ineq=zero
+    !
     call assert_shape(Hloc,[Nlat,Nspin,Nspin,Norb,Norb],'ed_set_Hloc','Hloc')
     Hloc_ineq  = Hloc
-    end select
-  end subroutine ed_set_Hloc_lattice
-
-
+  end subroutine ed_set_Hloc_lattice_N5
 
 
 

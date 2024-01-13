@@ -13,38 +13,147 @@ MODULE ED_IO
   implicit none
   private
 
-    ! !Retrieve self-energy through routines:
+  ! !Retrieve self-energy through routines:
   interface ed_get_sigma
-     module procedure ed_get_sigma_site
-     module procedure ed_get_sigma_lattice
+     module procedure :: ed_get_sigma_site_n3
+     module procedure :: ed_get_sigma_site_n5
+     module procedure :: ed_get_sigma_lattice_n3
+     module procedure :: ed_get_sigma_lattice_n4
+     module procedure :: ed_get_sigma_lattice_n6
   end interface ed_get_sigma
 
   !Retrieve imp GF through routines.
   interface ed_get_gimp
-     module procedure ed_get_gimp_site
-     module procedure ed_get_gimp_lattice
+     module procedure :: ed_get_gimp_site_n3
+     module procedure :: ed_get_gimp_site_n5
+     module procedure :: ed_get_gimp_lattice_n3
+     module procedure :: ed_get_gimp_lattice_n4
+     module procedure :: ed_get_gimp_lattice_n6
   end interface ed_get_gimp
 
   !Retrieve imp GF_0 (G0_and) through routines.
   interface ed_get_g0imp
-     module procedure ed_get_g0imp_site
-     module procedure ed_get_g0imp_lattice
+     module procedure :: ed_get_g0imp_site_n3
+     module procedure :: ed_get_g0imp_site_n5
+     module procedure :: ed_get_g0imp_lattice_n3
+     module procedure :: ed_get_g0imp_lattice_n4
+     module procedure :: ed_get_g0imp_lattice_n6
   end interface ed_get_g0imp
 
 
   !Rebuild impurity Sigma  or GF from saved poles&weights
   interface ed_build_gimp
-     module procedure rebuild_gimp_single
-     module procedure rebuild_gimp_ineq
+     module procedure :: rebuild_gimp_single_n3
+     module procedure :: rebuild_gimp_single_n5
+     module procedure :: rebuild_gimp_ineq_n3
+     module procedure :: rebuild_gimp_ineq_n4
+     module procedure :: rebuild_gimp_ineq_n6
   end interface ed_build_gimp
 
   interface ed_build_sigma
-     module procedure rebuild_sigma_single
-     module procedure rebuild_sigma_ineq
+     module procedure :: rebuild_sigma_single_n3
+     module procedure :: rebuild_sigma_single_n5
+     module procedure :: rebuild_sigma_ineq_n3
+     module procedure :: rebuild_sigma_ineq_n4
+     module procedure :: rebuild_sigma_ineq_n6
   end interface ed_build_sigma
 
 
+  !Build Gand/Delta from a user bath
+  interface ed_get_g0and
+     module procedure :: ed_get_g0and_n3
+     module procedure :: ed_get_g0and_n5
+  end interface ed_get_g0and
 
+  interface ed_get_delta
+     module procedure :: ed_get_delta_n3
+     module procedure :: ed_get_delta_n5
+  end interface ed_get_delta
+
+
+  !Observables
+  interface ed_get_dens
+     module procedure :: ed_get_dens_n0
+     module procedure :: ed_get_dens_n1
+     module procedure :: ed_get_dens_n2
+  end interface ed_get_dens
+
+  interface ed_get_mag
+     module procedure :: ed_get_mag_n0
+     module procedure :: ed_get_mag_n1
+     module procedure :: ed_get_mag_n2
+     module procedure :: ed_get_mag_n3
+  end interface ed_get_mag
+
+  interface ed_get_docc
+     module procedure :: ed_get_docc_n0
+     module procedure :: ed_get_docc_n1
+     module procedure :: ed_get_docc_n2
+  end interface ed_get_docc
+
+  interface ed_get_phi
+     module procedure :: ed_get_phisc_n0
+     module procedure :: ed_get_phisc_n1
+     module procedure :: ed_get_phisc_n2
+  end interface ed_get_phi
+
+
+  !Get Energies
+  interface ed_get_eimp
+     module procedure :: ed_get_eimp_n1
+     module procedure :: ed_get_eimp_n2
+  end interface ed_get_eimp
+
+  interface ed_get_epot
+     module procedure :: ed_get_epot_n0
+     module procedure :: ed_get_epot_n1
+  end interface ed_get_epot
+
+  interface ed_get_eint
+     module procedure :: ed_get_eint_n0
+     module procedure :: ed_get_eint_n1
+  end interface ed_get_eint
+
+  interface ed_get_ehartree
+     module procedure :: ed_get_ehartree_n0
+     module procedure :: ed_get_ehartree_n1
+  end interface ed_get_ehartree
+
+  interface ed_get_eknot
+     module procedure :: ed_get_eknot_n0
+     module procedure :: ed_get_eknot_n1
+  end interface ed_get_eknot
+
+
+  !Get Double occupancies
+  interface ed_get_doubles
+     module procedure :: ed_get_doubles_n1
+     module procedure :: ed_get_doubles_n2
+  end interface ed_get_doubles
+
+  interface ed_get_dust
+     module procedure :: ed_get_dust_n0
+     module procedure :: ed_get_dust_n1
+  end interface ed_get_dust
+
+  interface ed_get_dund
+     module procedure :: ed_get_dund_n0
+     module procedure :: ed_get_dund_n1
+  end interface ed_get_dund
+
+  interface ed_get_dse
+     module procedure :: ed_get_dse_n0
+     module procedure :: ed_get_dse_n1
+  end interface ed_get_dse
+
+  interface ed_get_dph
+     module procedure :: ed_get_dph_n0
+     module procedure :: ed_get_dph_n1
+  end interface ed_get_dph
+
+
+
+  
 
   interface ed_get_density_matrix
      module procedure :: ed_get_density_matrix_single
@@ -69,7 +178,7 @@ MODULE ED_IO
   public :: ed_get_dens
   public :: ed_get_mag
   public :: ed_get_docc
-  public :: ed_get_phisc
+  public :: ed_get_phi
   public :: ed_get_eimp
   public :: ed_get_epot
   public :: ed_get_eint 
@@ -153,7 +262,13 @@ contains
   !+--------------------------------------------------------------------------+!
   ! PURPOSE: Retrieve measured values of the local observables
   !+--------------------------------------------------------------------------+!
-  include "get_observables.f90"
+  include "get_dens.f90"
+  include "get_mag.f90"
+  include "get_docc.f90"
+  include "get_phi.f90"
+  include "get_energy.f90"
+  include "get_doubles.f90"
+  include "get_neigen.f90"
 
 
 
