@@ -43,7 +43,7 @@ contains
     if(.not.Hsector%status)stop "ed_buildh_main ERROR: Hsector NOT allocated"
     isector=Hsector%index
     !
-    Dim = getdim(isector)
+    Dim = Hsector%Dim !getdim(isector)
     !
     if(present(Hmat))call assert_shape(Hmat,[Dim,Dim],"ed_buildh_main","Hmat")
     !
@@ -96,6 +96,7 @@ contains
     if(MpiStatus)then
        call sp_set_mpi_matrix(MpiComm,spH0,mpiIstart,mpiIend,mpiIshift)
        call sp_init_matrix(MpiComm,spH0,Dim)
+
     else
        call sp_init_matrix(spH0,Dim)
     endif

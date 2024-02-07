@@ -22,8 +22,8 @@ MODULE ED_OBSERVABLES_NORMAL
   real(8),dimension(:),allocatable   :: docc
   real(8),dimension(:),allocatable   :: magz
   real(8),dimension(:,:),allocatable :: sz2,n2
-  real(8),dimension(:,:),allocatable :: exct_s0
-  real(8),dimension(:,:),allocatable :: exct_tz
+  real(8),dimension(:,:),allocatable :: exct_s0, exct_s02
+  real(8),dimension(:,:),allocatable :: exct_tz, exct_tz2
   real(8),dimension(:,:),allocatable :: zimp,simp
   real(8)                            :: dens_ph
   real(8)                            :: X_ph, X2_ph
@@ -44,7 +44,7 @@ MODULE ED_OBSERVABLES_NORMAL
   integer                            :: iup,idw
   integer                            :: jup,jdw
   integer                            :: mup,mdw
-  integer                            :: iph,i_el,isectorDim
+  integer                            :: iph,i_el,isectorDim,j_el
   real(8)                            :: sgn,sgn1,sgn2,sg1,sg2,sg3,sg4
   real(8)                            :: gs_weight
   !
@@ -54,7 +54,7 @@ MODULE ED_OBSERVABLES_NORMAL
   integer                            :: i,j,ii
   integer                            :: isector,jsector
   !
-  real(8),dimension(:),allocatable   :: vvinit
+  real(8),dimension(:),allocatable   :: vvinit, vupinit, vdwinit
   real(8),dimension(:),allocatable   :: state_dvec
   logical                            :: Jcondition
   !
@@ -82,6 +82,7 @@ contains
     allocate(magz(Norb),sz2(Norb,Norb),n2(Norb,Norb))
     allocate(simp(Norb,Nspin),zimp(Norb,Nspin))
     allocate(exct_S0(Norb,Norb),exct_Tz(Norb,Norb))
+    allocate(exct_S02(Norb,Norb),exct_Tz2(Norb,Norb))
     allocate(Prob(3**Norb))
     allocate(prob_ph(DimPh))
     allocate(pdf_ph(Lpos))
@@ -96,8 +97,8 @@ contains
     sz2     = 0.d0
     n2      = 0.d0
     s2tot   = 0.d0
-    exct_s0 = 0d0
-    exct_tz = 0d0
+    exct_s0 = 0d0; exct_s02 = 0.d0
+    exct_tz = 0d0; exct_tz2 = 0.d0
     theta_upup = 0d0
     theta_dwdw = 0d0
     Prob    = 0.d0
@@ -177,13 +178,22 @@ contains
 
              !<X> and <X^2> with X=(b+bdg)/sqrt(2)
              if(iph<DimPh)then
-                j= i_el + (iph)*sectorI%DimEl
-                X_ph = X_ph + sqrt(2.d0*dble(iph))*(state_dvec(i)*state_dvec(j))*peso
+                j = i_el + (iph)*sectorI%DimEl !bdg
+                X_ph = X_ph + sqrt(dble(iph)/2.d0)*(state_dvec(i)*state_dvec(j))*peso
              end if
+             if(iph>1)then
+                j = i_el + (iph-2)*sectorI%DimEl !b
+                X_ph = X_ph + sqrt(dble(iph-1)/2.d0)*(state_dvec(i)*state_dvec(j))*peso
+             end if
+             !
              X2_ph = X2_ph + 0.5d0*(1+2*(iph-1))*gs_weight
              if(iph<DimPh-1)then
                 j= i_el + (iph+1)*sectorI%DimEl
-                X2_ph = X2_ph + sqrt(dble((iph)*(iph+1)))*(state_dvec(i)*state_dvec(j))*peso
+                X2_ph = X2_ph + 0.5d0*sqrt(dble((iph)*(iph+1)))*(state_dvec(i)*state_dvec(j))*peso
+             end if
+             if(iph>2)then
+                j= i_el + (iph-3)*sectorI%DimEl
+                X2_ph = X2_ph + 0.5d0*sqrt(dble((iph-2)*(iph-1)))*(state_dvec(i)*state_dvec(j))*peso
              end if
              !
              !compute the lattice probability distribution function
@@ -285,6 +295,87 @@ contains
                    if(allocated(vvinit))deallocate(vvinit)
                 endif
              endif
+             !
+          enddo
+       enddo
+       !
+       ! Compute < \Delta_exc^2 >
+       do iorb=1,Norb
+          do jorb=iorb+1,Norb
+             allocate(vupinit(sectorI%Dim));vupinit=zero
+             allocate(vdwinit(sectorI%Dim));vdwinit=zero
+             !
+             ! spin up
+             jsector = getCsector(1,1,isector)
+             if(jsector/=0)then
+                if(Mpimaster)then
+                   call build_sector(jsector,sectorJ)
+                   allocate(vvinit(sectorJ%Dim));vvinit=zero
+                   do i=1,sectorI%Dim
+                      call apply_op_C(i,j,sgn,jorb,1,1,sectorI,sectorJ) !c_b,up
+                      if(sgn==0d0.OR.j==0)cycle
+                      vvinit(j) = vvinit(j) + sgn*state_dvec(i)
+                   enddo
+                   do j=1,sectorJ%Dim
+                      call apply_op_CDG(j,i,sgn,iorb,1,1,sectorJ,sectorI) !cdg_a,up
+                      if(sgn==0d0.OR.i==0)cycle
+                      vupinit(i) = vupinit(i) + sgn*vvinit(j) ! ( cdg_a,up c_b,up ) |v> 
+                   enddo
+                   vvinit=0.d0
+                   do i=1,sectorI%Dim
+                      call apply_op_C(i,j,sgn,iorb,1,1,sectorI,sectorJ) !c_a,up
+                      if(sgn==0d0.OR.j==0)cycle
+                      vvinit(j) = vvinit(j) + sgn*state_dvec(i)
+                   enddo
+                   do j=1,sectorJ%Dim
+                      call apply_op_CDG(j,i,sgn,jorb,1,1,sectorJ,sectorI) !cdg_b,up
+                      if(sgn==0d0.OR.i==0)cycle
+                      vupinit(i) = vupinit(i) + sgn*vvinit(j) ! ( cdg_a,up c_b,up + cdg_b,up c_a,up) |v>
+                   enddo
+                   call delete_sector(sectorJ)
+                   !
+                   if(allocated(vvinit))deallocate(vvinit)
+                endif
+             endif
+             !
+             ! spin down
+             jsector = getCsector(1,2,isector)
+             if(jsector/=0)then
+                if(Mpimaster)then
+                   call build_sector(jsector,sectorJ)
+                   allocate(vvinit(sectorJ%Dim))
+                   vvinit=zero
+                   do i=1,sectorI%Dim
+                      call apply_op_C(i,j,sgn,jorb,1,2,sectorI,sectorJ) !c_b,up
+                      if(sgn==0d0.OR.j==0)cycle
+                      vvinit(j) = vvinit(j) + sgn*state_dvec(i)
+                   enddo
+                   do j=1,sectorJ%Dim
+                      call apply_op_CDG(j,i,sgn,iorb,1,2,sectorJ,sectorI) !cdg_a,up
+                      if(sgn==0d0.OR.i==0)cycle
+                      vdwinit(i) = vdwinit(i) + sgn*vvinit(j) ! ( cdg_a,up c_b,up ) |v> 
+                   enddo
+                   vvinit=0.d0
+                   do i=1,sectorI%Dim
+                      call apply_op_C(i,j,sgn,iorb,1,2,sectorI,sectorJ) !c_a,up
+                      if(sgn==0d0.OR.j==0)cycle
+                      vvinit(j) = vvinit(j) + sgn*state_dvec(i)
+                   enddo
+                   do j=1,sectorJ%Dim
+                      call apply_op_CDG(j,i,sgn,jorb,1,2,sectorJ,sectorI) !cdg_b,up
+                      if(sgn==0d0.OR.i==0)cycle
+                      vdwinit(i) = vdwinit(i) + sgn*vvinit(j) ! ( cdg_a,up c_b,up + cdg_b,up c_a,up) |v>
+                   enddo
+                   call delete_sector(sectorJ)
+                   !
+                   if(allocated(vvinit))deallocate(vvinit)
+                   exct_s02(iorb,jorb) = exct_s02(iorb,jorb) + 0.25d0*dot_product(vupinit+vdwinit,vupinit+vdwinit)*peso
+                   exct_tz2(iorb,jorb) = exct_tz2(iorb,jorb) + 0.25d0*dot_product(vupinit-vdwinit,vupinit-vdwinit)*peso
+                endif
+             endif
+             !
+             if(allocated(vupinit))deallocate(vupinit)
+             if(allocated(vdwinit))deallocate(vdwinit)      
              !
           enddo
        enddo
@@ -407,6 +498,11 @@ contains
             "excS0"//reg(ed_file_suffix)//"=",((exct_S0(iorb,jorb),iorb=1,Norb),jorb=1,Norb)
        if(any(exct_tz/=0d0))write(LOGfile,"(A,10f18.12)")&
             "excTZ"//reg(ed_file_suffix)//"=",((exct_Tz(iorb,jorb),iorb=1,Norb),jorb=1,Norb)
+       if(any(exct_S0/=0d0))write(LOGfile,"(A,10f18.12)")&
+            "excS02"//reg(ed_file_suffix)//"=",((exct_S02(iorb,jorb),iorb=1,Norb),jorb=1,Norb)
+       if(any(exct_tz/=0d0))write(LOGfile,"(A,10f18.12)")&
+            "excTZ2"//reg(ed_file_suffix)//"=",((exct_Tz2(iorb,jorb),iorb=1,Norb),jorb=1,Norb)
+       
        if(Nspin==2)then
           write(LOGfile,"(A,10f18.12,A)")&
                " magZ"//reg(ed_file_suffix)//"=",(magz(iorb),iorb=1,Norb)
@@ -430,7 +526,7 @@ contains
 #endif
     !
     deallocate(dens,docc,dens_up,dens_dw,magz,sz2,n2,Prob)
-    deallocate(exct_S0,exct_Tz)
+    deallocate(exct_S0,exct_Tz,exct_s02,exct_tz2)
     deallocate(simp,zimp,prob_ph,pdf_ph,pdf_part)
 #ifdef _DEBUG
     if(ed_verbose>2)write(Logfile,"(A)")""
@@ -457,6 +553,7 @@ contains
     ed_Ehartree= 0.d0
     ed_Eknot   = 0.d0
     ed_Epot    = 0.d0
+    ed_Eeph    = 0.d0
     ed_Dust    = 0.d0
     ed_Dund    = 0.d0
     ed_Dse     = 0.d0
@@ -645,6 +742,76 @@ contains
                    enddo
                 endif
              endif
+             !
+             !ELECTRON-PHONON COUPLING
+             if(nph>0)then
+                !UP-SPIN
+                do iorb=1,Norb
+                   !DIAGONAL
+                   if(g_ph(iorb,iorb)/=zero)then
+                      if(iph<DimPh)then !bdg
+                         j = i_el + (iph  )*sectorI%DimEl
+                         ed_Eeph = ed_Eeph + g_ph(iorb,iorb)*(Nup(iorb)-0.5d0)*sqrt(dble(iph))*state_dvec(i)*state_dvec(j)
+                      endif
+                      if(iph>1)then !b
+                         j = i_el + (iph -2 )*sectorI%DimEl
+                         ed_Eeph = ed_Eeph + g_ph(iorb,iorb)*(Nup(iorb)-0.5d0)*sqrt(dble(iph-1))*state_dvec(i)*state_dvec(j)
+                      endif
+                   end if
+                   !OFF-DIAGONAL
+                   do jorb=1,Norb
+                      if(g_ph(iorb,jorb)/=zero .and.&
+                           Nup(jorb)==1 .and. Nup(iorb)==0 )then
+                         call c(jorb,mup,k1,sg1)
+                         call cdg(iorb,k1,k2,sg2)
+                         jup  = binary_search(sectorI%H(1)%map,k2)
+                         jdw  = idw
+                         j_el    = jup + (jdw-1)*sectorI%DimUp                         
+                         if(iph<DimPh)then !bdg
+                            j = j_el + (iph  )*sectorI%DimEl
+                            ed_Eeph = ed_Eeph + g_ph(iorb,jorb)*sqrt(dble(iph))*state_dvec(i)*state_dvec(j)*sg1*sg2
+                         endif
+                         if(iph>1)then !b
+                            j = j_el + (iph -2 )*sectorI%DimEl
+                            ed_Eeph = ed_Eeph + g_ph(iorb,jorb)*sqrt(dble(iph-1))*state_dvec(i)*state_dvec(j)*sg1*sg2
+                         endif
+                      endif
+                   enddo
+                end do
+                !DW-SPIN
+                do iorb=1,Norb
+                   !DIAGONAL
+                   if(g_ph(iorb,iorb)/=zero)then
+                      if(iph<DimPh)then !bdg
+                         j = i_el + (iph  )*sectorI%DimEl
+                         ed_Eeph = ed_Eeph + g_ph(iorb,iorb)*(Ndw(iorb)-0.5d0)*sqrt(dble(iph))*state_dvec(i)*state_dvec(j)
+                      endif
+                      if(iph>1)then!b
+                         j = i_el + (iph -2 )*sectorI%DimEl
+                         ed_Eeph = ed_Eeph + g_ph(iorb,iorb)*(Ndw(iorb)-0.5d0)*sqrt(dble(iph-1))*state_dvec(i)*state_dvec(j)
+                      endif
+                   end if
+                   do jorb=1,Norb
+                      !OFF-DIAGONAL
+                      if(g_ph(iorb,jorb)/=zero .and.&
+                           Ndw(jorb)==1 .and. Ndw(iorb)==0 )then
+                         call c(jorb,mdw,k1,sg1)
+                         call cdg(iorb,k1,k2,sg2)
+                         jdw  = binary_search(sectorI%H(2)%map,k2)
+                         jup  = iup
+                         j_el    = jup + (jdw-1)*sectorI%DimUp                         
+                         if(iph<DimPh)then !bdg
+                            j = j_el + (iph  )*sectorI%DimEl
+                            ed_Eeph = ed_Eeph + g_ph(iorb,jorb)*sqrt(dble(iph))*state_dvec(i)*state_dvec(j)*sg1*sg2
+                         endif
+                         if(iph>1)then !b
+                            j = j_el + (iph -2 )*sectorI%DimEl
+                            ed_Eeph = ed_Eeph + g_ph(iorb,jorb)*sqrt(dble(iph-1))*state_dvec(i)*state_dvec(j)*sg1*sg2
+                         endif
+                      endif
+                   enddo
+                enddo
+             endif
           enddo
           call delete_sector(sectorI)         
        endif
@@ -663,6 +830,7 @@ contains
        call Bcast_MPI(MpiComm,ed_Ehartree)
        call Bcast_MPI(MpiComm,ed_Dust)
        call Bcast_MPI(MpiComm,ed_Dund)
+       call Bcast_MPI(MpiComm,ed_Eeph)
     endif
 #endif
     !
@@ -675,6 +843,7 @@ contains
        write(LOGfile,"(A,10f18.12)")"<Ehf>   =",ed_Ehartree    
        write(LOGfile,"(A,10f18.12)")"Dust    =",ed_Dust
        write(LOGfile,"(A,10f18.12)")"Dund    =",ed_Dund
+       write(LOGfile,"(A,10f18.12)")"Eeph    =",ed_Eeph
     endif
     !
     if(MPIMASTER)then
@@ -754,6 +923,9 @@ contains
     write(unit,"(A1,90(A10,6X))") "# *****"
     write(unit,"(A1,90(A10,6X))") "# exciton_last.ed"
     write(unit,"(A1,90(A10,6X))") "#","1S_0" , "2T_z"
+    write(unit,"(A1,90(A10,6X))") "# *****"
+    write(unit,"(A1,90(A10,6X))") "# exc_square_last.ed"
+    write(unit,"(A1,90(A10,6X))") "#","1S_02" , "2T_z2"
     close(unit)
     !
     unit = free_unit()
@@ -782,7 +954,10 @@ contains
          reg(txtfy(3))//"<Eloc>",&
          reg(txtfy(4))//"<Ehf>",&
          reg(txtfy(5))//"<Dst>",&
-         reg(txtfy(6))//"<Dnd>"
+         reg(txtfy(6))//"<Dnd>",&
+         reg(txtfy(7))//"<Dse>",&
+         reg(txtfy(8))//"<Dph>",&
+         reg(txtfy(9))//"<Eeph>"
     close(unit)
   end subroutine write_energy_info
 
@@ -854,6 +1029,15 @@ contains
     enddo
     close(unit)
     !
+    unit = free_unit()
+    open(unit,file="exc_square_all"//reg(ed_file_suffix)//".ed",position='append')
+    do iorb=1,Norb
+       do jorb=iorb+1,Norb
+          write(unit,"(90(F15.9,1X))")exct_s02(iorb,jorb),exct_tz2(iorb,jorb)
+       enddo
+    enddo
+    close(unit)
+    !
     !LAST OBSERVABLES
     unit = free_unit()
     open(unit,file="dens_last"//reg(ed_file_suffix)//".ed")
@@ -915,6 +1099,17 @@ contains
     enddo
     close(unit)
     !
+    unit = free_unit()
+    open(unit,file="exc_square_last"//reg(ed_file_suffix)//".ed")
+    do iorb=1,Norb
+       do jorb=iorb+1,Norb
+          write(unit,"(90(F15.9,1X))")&
+               exct_s02(iorb,jorb),exct_tz2(iorb,jorb)
+       enddo
+    enddo
+    close(unit)
+
+    !
     close(unit)
     unit = free_unit()
     open(unit,file="parameters_last"//reg(ed_file_suffix)//".ed")
@@ -937,7 +1132,7 @@ contains
     integer :: unit
     unit = free_unit()
     open(unit,file="energy_last"//reg(ed_file_suffix)//".ed")
-    write(unit,"(90F15.9)")ed_Epot,ed_Epot-ed_Ehartree,ed_Eknot,ed_Ehartree,ed_Dust,ed_Dund,ed_Dse,ed_Dph
+    write(unit,"(90F15.9)")ed_Epot,ed_Epot-ed_Ehartree,ed_Eknot,ed_Ehartree,ed_Dust,ed_Dund,ed_Dse,ed_Dph,ed_Eeph
     close(unit)
   end subroutine write_energy
 

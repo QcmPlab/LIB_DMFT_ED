@@ -709,7 +709,7 @@ contains
              getmaxtwoJz(in)=maxtwoJz
              getSector(in,twoJz)=isector
              dim = get_nonsu2_sector_dimension_Jz(in,twoJz)
-             getDim(isector)=dim
+             getDim(isector)=dim*DimPh
              neigen_sector(isector) = min(dim,lanc_nstates_sector)
           enddo
        enddo
@@ -719,7 +719,7 @@ contains
           getSector(in,1)=isector
           getN(isector)=in
           dim = get_nonsu2_sector_dimension(in)
-          getDim(isector)=dim
+          getDim(isector)=dim*DimPh
           neigen_sector(isector) = min(dim,lanc_nstates_sector)
        enddo
     endif

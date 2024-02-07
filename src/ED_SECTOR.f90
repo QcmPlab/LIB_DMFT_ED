@@ -168,7 +168,7 @@ contains
           if(ed_verbose>3)write(Logfile,"(A,I4)")&
                "DEBUG build_sector: sector:"//str(isector)//"- N",self%Ntot
 #endif
-          self%DimEl = getDim(isector)
+          self%DimEl = getDim(isector)/(Nph+1)
           self%DimPh = Nph+1
           self%Dim   = self%DimEl*self%DimPh
           self%twoJz = gettwoJz(isector)
@@ -201,7 +201,7 @@ contains
           if(ed_verbose>4)write(Logfile,"(A,I4)")&
                "DEBUG build_sector: sector:"//str(isector)//"- N",self%Ntot
 #endif
-          self%DimEl = getDim(isector)
+          self%DimEl = getDim(isector)/(Nph+1)
           self%DimPh = Nph+1
           self%Dim   = self%DimEl*self%DimPh
           call map_allocate(self%H,[self%Dim])
