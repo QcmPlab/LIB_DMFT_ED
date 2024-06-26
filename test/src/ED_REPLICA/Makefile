@@ -6,7 +6,7 @@ FFLAGS= ${FFLAG} ${FPPMPI}
 .SUFFIXES: .f90
 .PHONY: clean
 
-GLOB_INC:=$(shell pkg-config --cflags scifor dmft_ed)
+GLOB_INC:=$(shell pkg-config --cflags scifor edipack2)
 
 all:  NORMAL SUPERC
 

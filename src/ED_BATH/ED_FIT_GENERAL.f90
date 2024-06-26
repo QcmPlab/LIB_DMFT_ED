@@ -1,7 +1,7 @@
 MODULE ED_FIT_GENERAL
   USE ED_FIT_COMMON
-  USE SF_PAULI, only: pauli_sigma_z
-  USE SF_LINALG, only: kron, diag
+  USE SF_SPIN, only: pauli_sigma_z
+  USE SF_LINALG, only: kron, diag, trace
 
   implicit none
   private
@@ -10,7 +10,9 @@ MODULE ED_FIT_GENERAL
   public :: chi2_fitgf_general
   public :: chi2_fitgf_general_superc
 
-  
+  complex(8),dimension(:,:,:,:,:),allocatable       :: FGmatrix
+
+
 contains
 
 
@@ -42,6 +44,12 @@ contains
     !
     check= check_bath_dimension(bath_)
     if(.not.check)stop "chi2_fitgf_general error: wrong bath dimensions"
+    !
+    if(cg_pow/=2.AND.cg_norm=="frobenius")then
+       print *, "WARNING: CG_POW must be 2 for a meaningful definition of the Frobenius norm."
+       print *, "         we'll still let you go ahead with the desired input, but please be "
+       print *, "         be aware that CG_POW is not doing what you would expect for a chi^q"
+    endif
     !
     call allocate_dmft_bath(dmft_bath)
     call set_dmft_bath(bath_,dmft_bath)
@@ -78,6 +86,7 @@ contains
     !
     Ldelta = Lfit ; if(Ldelta>size(fg,5))Ldelta=size(fg,5)
     !
+    allocate(FGmatrix(Nspin,Nspin,Norb,Norb,Ldelta))
     allocate(Gdelta(totNso,Ldelta))
     allocate(Xdelta(Ldelta))
     allocate(Wdelta(Ldelta))
@@ -102,8 +111,11 @@ contains
     if(ed_verbose>3)write(Logfile,"(A)")&
          "DEBUG chi2_fitgf_general: cg_method:"//str(cg_method)//&
          ", cg_grad:"//str(cg_grad)//&
-         ", cg_scheme:"//str(cg_scheme)
+         ", cg_scheme:"//str(cg_scheme)//&
+         ", cg_norm:"//str(cg_norm)
 #endif
+    !
+    FGmatrix=fg
     !
     select case(cg_method)     !0=NR-CG[default]; 1=CG-MINIMIZE
     case default
@@ -196,7 +208,7 @@ contains
     !
     call get_dmft_bath(dmft_bath,bath_)                ! ***  dmft_bath --> bath_ ***    (bath in output)
     call deallocate_dmft_bath(dmft_bath)
-    deallocate(Gdelta,Xdelta,Wdelta)
+    deallocate(FGmatrix,Gdelta,Xdelta,Wdelta)
     deallocate(getIspin,getJspin)
     deallocate(getIorb,getJorb)
     deallocate(array_bath)
@@ -249,7 +261,23 @@ contains
   !+-----------------------------------------------------------------+
   !PURPOSE: Evaluate the \chi^2 distance of \Delta_Anderson function.
   !+-----------------------------------------------------------------+
-  function chi2_delta_general(a) result(chi2)
+   function chi2_delta_general(a) result(chi2)
+    real(8),dimension(:)                                         :: a
+    real(8)                                                      :: chi2
+    !
+    select case(cg_norm)
+     case ("elemental")
+       chi2 = chi2_delta_general_elemental(a)
+     case ("frobenius")
+       chi2 = chi2_delta_general_frobenius(a)
+     case default
+       stop "chi2_fitgf_general error: cg_norm != [elemental,frobenius]"
+    end select
+    !
+ end function chi2_delta_general
+
+
+  function chi2_delta_general_elemental(a) result(chi2)
     real(8),dimension(:)                               :: a
     real(8)                                            :: chi2
     real(8),dimension(totNso)                          :: chi2_so
@@ -279,13 +307,57 @@ contains
     if(ed_verbose>3)write(Logfile,"(A,ES10.2)")"DEBUG chi2_delta_general. Chi**2:",chi2
 #endif
     !
-  end function chi2_delta_general
+  end function chi2_delta_general_elemental
   !
+  
+ !> FROBENIUS NORM: global \chi^2 for all components, only i\omega are weighted
+ function chi2_delta_general_frobenius(a) result(chi2)
+    real(8),dimension(:)                                         :: a
+    real(8)                                                      :: chi2
+    real(8),dimension(Ldelta)                                    :: chi2_freq
+    complex(8),dimension(Nspin,Nspin,Norb,Norb,Ldelta)           :: Delta
+    complex(8),dimension(Nspin*Norb,Nspin*Norb)                  :: Delta_so
+    integer                                                      :: l
+    !
+#ifdef _DEBUG
+    if(ed_verbose>5)write(Logfile,"(A,"//str(size(a))//"ES10.2)")"DEBUG chi2_delta_general_frobenius. a:",a
+#endif
+    !
+    Delta = delta_general(a)
+    !
+    do l=1,Ldelta
+       Delta_so    =  nn2so_reshape(delta(:,:,:,:,l) - FGmatrix(:,:,:,:,l),Nspin,Norb)
+       chi2_freq(l) =  sqrt(trace(matmul(Delta_so,conjg(transpose(Delta_so)))))
+    enddo
+    !
+    chi2 = sum(chi2_freq**cg_pow/Wdelta) !Weighted sum over matsubara frqs
+    chi2 = chi2/Ldelta/(Nspin*Norb) !Normalization over {iw} and Nlso
+    !
+#ifdef _DEBUG
+    if(ed_verbose>3)write(Logfile,"(A,ES10.2)")"DEBUG chi2_delta_general_frobenius. chi2:",chi2
+#endif
+    !
+ end function chi2_delta_general_frobenius
   !
   !+--------------------------------------------------------------+
   !PURPOSE: Evaluate the \chi^2 distance of G_0_Anderson function.
   !+--------------------------------------------------------------+
-  function chi2_weiss_general(a) result(chi2)
+   function chi2_weiss_general(a) result(chi2)
+      real(8),dimension(:)                                         :: a
+      real(8)                                                      :: chi2
+      !
+      select case(cg_norm)
+       case ("elemental")
+         chi2 = chi2_weiss_general_elemental(a)
+       case ("frobenius")
+         chi2 = chi2_weiss_general_frobenius(a)
+       case default
+         stop "chi2_fitgf_general error: cg_norm != [elemental,frobenius]"
+      end select
+      !
+   end function chi2_weiss_general  
+
+  function chi2_weiss_general_elemental(a) result(chi2)
    real(8),dimension(:)                               :: a
    real(8)                                            :: chi2
    real(8),dimension(totNso)                          :: chi2_so
@@ -315,21 +387,61 @@ contains
    if(ed_verbose>3)write(Logfile,"(A,ES10.2)")"DEBUG chi2_weiss_general. Chi**2:",chi2
 #endif
   !
-  end function chi2_weiss_general
+  end function chi2_weiss_general_elemental
 
-
+   !> FROBENIUS NORM: global \chi^2 for all components, only i\omega are weighted
+   function chi2_weiss_general_frobenius(a) result(chi2)
+      real(8),dimension(:)                                         :: a
+      real(8)                                                      :: chi2
+      real(8),dimension(Ldelta)                                    :: chi2_freq
+      complex(8),dimension(Nspin,Nspin,Norb,Norb,Ldelta)           :: g0and
+      complex(8),dimension(Nspin*Norb,Nspin*Norb)                  :: Delta_so
+      integer                                                      :: l
+      !
+#ifdef _DEBUG
+      if(ed_verbose>5)write(Logfile,"(A,"//str(size(a))//"ES10.2)")"DEBUG chi2_weiss_general_frobenius. a:",a
+#endif
+      !
+      g0and = g0and_general(a)
+      !
+      do l=1,Ldelta
+         Delta_so    =  nn2so_reshape(g0and(:,:,:,:,l) - FGmatrix(:,:,:,:,l),Nspin,Norb)
+         chi2_freq(l) =  sqrt(trace(matmul(Delta_so,conjg(transpose(Delta_so)))))
+      enddo
+      !
+      chi2 = sum(chi2_freq**cg_pow/Wdelta) !Weighted sum over matsubara frqs
+      chi2 = chi2/Ldelta/(Nspin*Norb) !Normalization over {iw} and Nlso
+      !
+#ifdef _DEBUG
+      if(ed_verbose>3)write(Logfile,"(A,ES10.2)")"DEBUG chi2_weiss_general_frobenius. chi2:",chi2
+#endif
+      !
+   end function chi2_weiss_general_frobenius
 
 
 
   !######################################################################
   ! THESE PROCEDURES EVALUATE THE >GRADIENTS< OF THE \chi^2 TO MINIMIZE. 
   !######################################################################
-  !
+   function grad_chi2_delta_general(a) result(dchi2)
+      real(8),dimension(:)                                         :: a
+      real(8),dimension(size(a))                                   :: dchi2
+      !
+      select case(cg_norm)
+       case ("elemental")
+         dchi2 = grad_chi2_delta_general_elemental(a)
+       case ("frobenius")
+         dchi2 = grad_chi2_delta_general_frobenius(a)
+       case default
+         stop "chi2_fitgf_general error: cg_norm != [elemental,frobenius]"
+      end select
+      !
+   end function grad_chi2_delta_general
   !
   !+---------------------------------------------------------------------+
   !PURPOSE: Evaluate the gradient \Grad\chi^2 of \Delta_Anderson function.
   !+---------------------------------------------------------------------+
-  function grad_chi2_delta_general(a) result(dchi2)
+  function grad_chi2_delta_general_elemental(a) result(dchi2)
     real(8),dimension(:)                                       :: a
     real(8),dimension(size(a))                                 :: dchi2
     real(8),dimension(totNso,size(a))                          :: df
@@ -366,14 +478,73 @@ contains
     if(ed_verbose>4)write(Logfile,"(A,"//str(size(a))//"ES10.2)")"DEBUG grad_chi2_delta_general. dChi**2:",dchi2
 #endif
     !
-  end function grad_chi2_delta_general
+  end function grad_chi2_delta_general_elemental
   !
-  !
+   !> FROBENIUS NORM: global \chi^2 for all components, only i\omega are weighted
+   function grad_chi2_delta_general_frobenius(a) result(dchi2)
+      real(8),dimension(:)                                                 :: a
+      real(8),dimension(size(a))                                           :: dchi2
+      real(8),dimension(Ldelta,size(a))                                    :: df
+      complex(8),dimension(Nspin,Nspin,Norb,Norb,Ldelta)                   :: Delta
+      complex(8),dimension(Nspin,Nspin,Norb,Norb,Ldelta,size(a))           :: dDelta
+      complex(8),dimension(Ldelta)                                         :: Ftmp
+      real(8),dimension(Ldelta,size(a))                                    :: dChi_freq
+      integer                                                              :: i,j,idelta,iorb,jorb,ispin,jspin
+      !
+      Delta  = delta_general(a)
+      dDelta = grad_delta_general(a)
+      Ftmp=zero
+      df=zero
+      !
+      do idelta=1,Ldelta
+           do ispin=1,Nspin
+              do jspin=1,Nspin
+                 do iorb=1,Norb
+                    do jorb=1,Norb
+                       !
+                       Ftmp(idelta) = Ftmp(idelta) + abs(Delta(ispin,jspin,iorb,jorb,idelta)-FGmatrix(ispin,jspin,iorb,jorb,idelta))**2
+                       do j=1,size(a)
+                          df(idelta,j) = df(idelta,j) + &
+                             real(Delta(ispin,jspin,iorb,jorb,idelta) - FGmatrix(ispin,jspin,iorb,jorb,idelta)) * &
+                             real(dDelta(ispin,jspin,iorb,jorb,idelta,j)) + &
+                             imag(Delta(ispin,jspin,iorb,jorb,idelta) - FGmatrix(ispin,jspin,iorb,jorb,idelta)) * &
+                             imag(dDelta(ispin,jspin,iorb,jorb,idelta,j))
+                       enddo
+                    enddo
+                 enddo
+              enddo
+         enddo
+         Ftmp(idelta) = cg_pow * (sqrt(Ftmp(idelta))**(cg_pow-2)) / Wdelta(idelta)
+         dchi_freq(idelta,:) = Ftmp(idelta) * df(idelta,:)
+      enddo
+      !
+      dchi2 = sum(dchi_freq,1)/Ldelta/(Nspin*Norb)
+      !
+#ifdef _DEBUG
+      if(ed_verbose>4)write(Logfile,"(A,"//str(size(a))//"ES10.2)")"DEBUG grad_chi2_delta_general_frobenius. dChi2:",dchi2
+#endif
+      !
+   end function grad_chi2_delta_general_frobenius
   !
   !+------------------------------------------------------------------+
   !PURPOSE: Evaluate the gradient \Grad\chi^2 of G0_Anderson function.
   !+------------------------------------------------------------------+
-  function grad_chi2_weiss_general(a) result(dchi2)
+   function grad_chi2_weiss_general(a) result(dchi2)
+      real(8),dimension(:)                                         :: a
+      real(8),dimension(size(a))                                   :: dchi2
+      !
+      select case(cg_norm)
+       case ("elemental")
+         dchi2 = grad_chi2_weiss_general_elemental(a)
+       case ("frobenius")
+         dchi2 = grad_chi2_weiss_general_frobenius(a)
+       case default
+         stop "chi2_fitgf_general error: cg_norm != [elemental,frobenius]"
+      end select
+      !
+   end function grad_chi2_weiss_general  
+
+  function grad_chi2_weiss_general_elemental(a) result(dchi2)
     real(8),dimension(:)                                       :: a
     real(8),dimension(size(a))                                 :: dchi2
     real(8),dimension(totNso,size(a))                          :: df
@@ -410,8 +581,63 @@ contains
     if(ed_verbose>4)write(Logfile,"(A,"//str(size(a))//"ES10.2)")"DEBUG grad_chi2_weiss_general. dChi**2:",dchi2
 #endif
     !
-  end function grad_chi2_weiss_general
+  end function grad_chi2_weiss_general_elemental
 
+   !> FROBENIUS NORM: global \chi^2 for all components, only i\omega are weighted
+   function grad_chi2_weiss_general_frobenius(a) result(dchi2)
+      real(8),dimension(:)                                                 :: a
+      real(8),dimension(size(a))                                           :: dchi2
+      real(8),dimension(Ldelta,size(a))                                    :: df
+      complex(8),dimension(Nspin,Nspin,Norb,Norb,Ldelta)                   :: g0and
+      complex(8),dimension(Nspin,Nspin,Norb,Norb,Ldelta,size(a))           :: dg0and
+      complex(8),dimension(Ldelta)                                         :: Ftmp
+      real(8),dimension(Ldelta,size(a))                                    :: dChi_freq
+      integer                                                              :: i,j,idelta,iorb,jorb,ispin,jspin
+      !
+      !
+      print*, "                                                                     "
+      print*, "WARNING: the analytic gradient of the Weiss field Frobenius distance "
+      print*, "         has been found giving /QUALITATIVELY WRONG/ fitted spectra! "
+      print*, "         > the issue has emerged in some Nlat=Nspin=Norb=1 test runs "
+      print*, "         > while the bug is investigated please switch cg_scheme to  "
+      print*, "           'delta' or cg_norm to 'elemental' (or give up analytic cg)"
+      print*, "                                                                     "
+      !
+      !
+      g0and  = g0and_general(a)
+      dg0and = grad_g0and_general(a)
+      Ftmp=zero
+      df=zero
+      !
+      do idelta=1,Ldelta
+         do ispin=1,Nspin
+            do jspin=1,Nspin
+               do iorb=1,Norb
+                  do jorb=1,Norb
+                     !
+                     Ftmp(idelta) = Ftmp(idelta) + abs(g0and(ispin,jspin,iorb,jorb,idelta)-FGmatrix(ispin,jspin,iorb,jorb,idelta))**2
+                     do j=1,size(a)
+                        df(idelta,j) = df(idelta,j) + &
+                           real(g0and(ispin,jspin,iorb,jorb,idelta) - FGmatrix(ispin,jspin,iorb,jorb,idelta)) * &
+                           real(dg0and(ispin,jspin,iorb,jorb,idelta,j)) + &
+                           imag(g0and(ispin,jspin,iorb,jorb,idelta) - FGmatrix(ispin,jspin,iorb,jorb,idelta)) * &
+                           imag(dg0and(ispin,jspin,iorb,jorb,idelta,j))
+                     enddo
+                  enddo
+               enddo
+            enddo
+         enddo
+         Ftmp(idelta) = cg_pow * (sqrt(Ftmp(idelta))**(cg_pow-2)) / Wdelta(idelta)
+         dchi_freq(idelta,:) = Ftmp(idelta) * df(idelta,:)
+      enddo
+      !
+      dchi2 = sum(dchi_freq,1)/Ldelta/(Nspin*Norb)
+      !
+#ifdef _DEBUG
+      if(ed_verbose>4)write(Logfile,"(A,"//str(size(a))//"ES10.2)")"DEBUG grad_chi2_weiss_general_frobenius. dChi2:",dchi2
+#endif
+      !
+   end function grad_chi2_weiss_general_frobenius
 
 
 

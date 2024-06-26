@@ -12,8 +12,8 @@ OBJS=../../ASSERTING.o
 
 #NO NEED TO CHANGE DOWN HERE, only expert mode.
 #########################################################################
-GLOB_INC:=$(shell pkg-config --cflags dmft_ed scifor)
-GLOB_LIB:=$(shell pkg-config --libs   dmft_ed scifor | sed  "s/;/ /g"  | sed 's/\\/  /g')
+GLOB_INC:=$(shell pkg-config --cflags edipack2 scifor)
+GLOB_LIB:=$(shell pkg-config --libs   edipack2 scifor | sed  "s/;/ /g"  | sed 's/\\/  /g')
 
 
 ifeq ($(PLAT),intel)

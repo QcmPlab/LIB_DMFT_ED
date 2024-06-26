@@ -131,7 +131,7 @@ contains
     complex(8),dimension(Nnambu*Nspin,Nnambu*Nspin,Norb,Norb) :: H
     !
     if(.not.Hgeneral_status)STOP "ERROR Hgeneral_build: Hgeneral_basis is not setup"
-    allocate(lambda(size(Hreplica_basis)));lambda=1d0
+    allocate(lambda(size(Hgeneral_basis)));lambda=1d0
     if(present(lambdavec))then
        if(size(lambdavec)/=size(Hgeneral_basis)) STOP "ERROR Hgeneral_build: Wrong coefficient vector size"
        lambda = lambdavec

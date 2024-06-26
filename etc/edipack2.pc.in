@@ -3,10 +3,10 @@ exec_prefix=${prefix}/bin
 includedir=${prefix}/include
 libdir=${prefix}/lib
 
-Name: dmft_ed
-Description: The DMFT_ED library
+Name: edipack2
+Description: The EDIpack2.0 library
 Cflags: -I${includedir}
-Libs: -L${libdir} -ldmft_ed
+Libs: -L${libdir} -ledipack2
 Version:@VERSION@
 
 

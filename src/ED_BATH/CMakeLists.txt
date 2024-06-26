@@ -1,4 +1,4 @@
-# DMFT_ED library
+# EDIpack2 library
 FILE(GLOB ED_BATH_SRC
   ED_BATH_AUX.f90
   ED_BATH_DIM.f90

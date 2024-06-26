@@ -1,4 +1,4 @@
-MODULE DMFT_ED
+MODULE EDIPACK2
   USE ED_INPUT_VARS  , only: &
        ed_read_input , &
        ed_update_input,&
@@ -76,7 +76,7 @@ MODULE DMFT_ED
        ed_get_eknot           , &
        ed_get_doubles         , &
        ed_get_density_matrix
-  
+
 
   USE ED_MAIN, only:    &
        ed_init_solver , &
@@ -86,5 +86,5 @@ MODULE DMFT_ED
   USE ED_BATH_FIT,  only: ed_chi2_fitgf
 
 
-END MODULE DMFT_ED
+END MODULE EDIPACK2
 

@@ -131,12 +131,12 @@ contains
           do iorb=1,Norb
              !
              impGmats(ispin,jspin,iorb,iorb,:) = 0.5d0*(impGmats(ispin,jspin,iorb,iorb,:) &
-                  - (one+xi)*impGmats(ispin,ispin,iorb,iorb,:) &
-                  - (one+xi)*impGmats(jspin,jspin,iorb,iorb,:))
+                  - (one-xi)*impGmats(ispin,ispin,iorb,iorb,:) &
+                  - (one-xi)*impGmats(jspin,jspin,iorb,iorb,:))
              !
              impGreal(ispin,jspin,iorb,iorb,:) = 0.5d0*(impGreal(ispin,jspin,iorb,iorb,:) &
-                  - (one+xi)*impGreal(ispin,ispin,iorb,iorb,:) &
-                  - (one+xi)*impGreal(jspin,jspin,iorb,iorb,:))
+                  - (one-xi)*impGreal(ispin,ispin,iorb,iorb,:) &
+                  - (one-xi)*impGreal(jspin,jspin,iorb,iorb,:))
              !
           enddo
        enddo
@@ -173,12 +173,12 @@ contains
              do jorb=1,Norb
                 if(iorb==jorb)cycle
                 impGmats(ispin,ispin,iorb,jorb,:) = 0.5d0*(impGmats(ispin,ispin,iorb,jorb,:) &
-                     - (one+xi)*impGmats(ispin,ispin,iorb,iorb,:) &
-                     - (one+xi)*impGmats(ispin,ispin,jorb,jorb,:))
+                     - (one-xi)*impGmats(ispin,ispin,iorb,iorb,:) &
+                     - (one-xi)*impGmats(ispin,ispin,jorb,jorb,:))
                 !
                 impGreal(ispin,ispin,iorb,jorb,:) = 0.5d0*(impGreal(ispin,ispin,iorb,jorb,:) &
-                     - (one+xi)*impGreal(ispin,ispin,iorb,iorb,:) &
-                     - (one+xi)*impGreal(ispin,ispin,jorb,jorb,:))
+                     - (one-xi)*impGreal(ispin,ispin,iorb,iorb,:) &
+                     - (one-xi)*impGreal(ispin,ispin,jorb,jorb,:))
                 !
              enddo
           enddo
@@ -217,12 +217,12 @@ contains
                 do jorb=1,Norb
                    if(iorb==jorb)cycle
                    impGmats(ispin,jspin,iorb,jorb,:) = 0.5d0*(impGmats(ispin,jspin,iorb,jorb,:) &
-                        - (one+xi)*impGmats(ispin,ispin,iorb,iorb,:) &
-                        - (one+xi)*impGmats(jspin,jspin,jorb,jorb,:))
+                        - (one-xi)*impGmats(ispin,ispin,iorb,iorb,:) &
+                        - (one-xi)*impGmats(jspin,jspin,jorb,jorb,:))
                    !
                    impGreal(ispin,jspin,iorb,jorb,:) = 0.5d0*(impGreal(ispin,jspin,iorb,jorb,:) &
-                        - (one+xi)*impGreal(ispin,ispin,iorb,iorb,:) &
-                        - (one+xi)*impGreal(jspin,jspin,jorb,jorb,:))
+                        - (one-xi)*impGreal(ispin,ispin,iorb,iorb,:) &
+                        - (one-xi)*impGreal(jspin,jspin,jorb,jorb,:))
                 enddo
              enddo
           enddo
@@ -297,12 +297,12 @@ contains
           if(ispin==jspin)cycle
           do iorb=1,Norb
              impGmats(ispin,jspin,iorb,iorb,:) = 0.5d0*(impGmats(ispin,jspin,iorb,iorb,:) &
-                  - (one+xi)*impGmats(ispin,ispin,iorb,iorb,:) &
-                  - (one+xi)*impGmats(jspin,jspin,iorb,iorb,:))
+                  - (one-xi)*impGmats(ispin,ispin,iorb,iorb,:) &
+                  - (one-xi)*impGmats(jspin,jspin,iorb,iorb,:))
              !
              impGreal(ispin,jspin,iorb,iorb,:) = 0.5d0*(impGreal(ispin,jspin,iorb,iorb,:) &
-                  - (one+xi)*impGreal(ispin,ispin,iorb,iorb,:) &
-                  - (one+xi)*impGreal(jspin,jspin,iorb,iorb,:))
+                  - (one-xi)*impGreal(ispin,ispin,iorb,iorb,:) &
+                  - (one-xi)*impGreal(jspin,jspin,iorb,iorb,:))
              !
           enddo
        enddo
@@ -332,12 +332,12 @@ contains
              do jorb=1,Norb
                 if(iorb==jorb)cycle
                 impGmats(ispin,ispin,iorb,jorb,:) = 0.5d0*(impGmats(ispin,ispin,iorb,jorb,:) &
-                     - (one+xi)*impGmats(ispin,ispin,iorb,iorb,:) &
-                     - (one+xi)*impGmats(ispin,ispin,jorb,jorb,:))
+                     - (one-xi)*impGmats(ispin,ispin,iorb,iorb,:) &
+                     - (one-xi)*impGmats(ispin,ispin,jorb,jorb,:))
                 !
                 impGreal(ispin,ispin,iorb,jorb,:) = 0.5d0*(impGreal(ispin,ispin,iorb,jorb,:) &
-                     - (one+xi)*impGreal(ispin,ispin,iorb,iorb,:) &
-                     - (one+xi)*impGreal(ispin,ispin,jorb,jorb,:))
+                     - (one-xi)*impGreal(ispin,ispin,iorb,iorb,:) &
+                     - (one-xi)*impGreal(ispin,ispin,jorb,jorb,:))
                 !
              enddo
           enddo
@@ -369,12 +369,12 @@ contains
                 do jorb=1,Norb
                    if(iorb==jorb)cycle
                    impGmats(ispin,jspin,iorb,jorb,:) = 0.5d0*(impGmats(ispin,jspin,iorb,jorb,:) &
-                        - (one+xi)*impGmats(ispin,ispin,iorb,iorb,:) &
-                        - (one+xi)*impGmats(jspin,jspin,jorb,jorb,:))
+                        - (one-xi)*impGmats(ispin,ispin,iorb,iorb,:) &
+                        - (one-xi)*impGmats(jspin,jspin,jorb,jorb,:))
                    !
                    impGreal(ispin,jspin,iorb,jorb,:) = 0.5d0*(impGreal(ispin,jspin,iorb,jorb,:) &
-                        - (one+xi)*impGreal(ispin,ispin,iorb,iorb,:) &
-                        - (one+xi)*impGreal(jspin,jspin,jorb,jorb,:))
+                        - (one-xi)*impGreal(ispin,ispin,iorb,iorb,:) &
+                        - (one-xi)*impGreal(jspin,jspin,jorb,jorb,:))
                 enddo
              enddo
           enddo
@@ -673,7 +673,7 @@ contains
           endif
           !
           call tridiag_Hv_sector_nonsu2(jsector,vvinit,alfa_,beta_,norm2)
-          call add_to_lanczos_gf_nonsu2(xi*norm2,state_e,alfa_,beta_,1,iorb,jorb,ispin,jspin,3,istate)
+          call add_to_lanczos_gf_nonsu2(-xi*norm2,state_e,alfa_,beta_,1,iorb,jorb,ispin,jspin,3,istate)
           deallocate(alfa_,beta_)
           if(allocated(vvinit))deallocate(vvinit)
        else
@@ -714,7 +714,7 @@ contains
           endif
           !
           call tridiag_Hv_sector_nonsu2(jsector,vvinit,alfa_,beta_,norm2)
-          call add_to_lanczos_gf_nonsu2(xi*norm2,state_e,alfa_,beta_,-1,iorb,jorb,ispin,jspin,4,istate)
+          call add_to_lanczos_gf_nonsu2(-xi*norm2,state_e,alfa_,beta_,-1,iorb,jorb,ispin,jspin,4,istate)
           deallocate(alfa_,beta_)
           if(allocated(vvinit))deallocate(vvinit)
        else

@@ -2,7 +2,7 @@ MODULE ED_BATH_FUNCTIONS
   USE SF_CONSTANTS, only: zero
   USE SF_IOTOOLS, only:free_unit,reg,file_length,txtfy,str
   USE SF_LINALG, only: eye,inv,diag,zeye,inv_her,kron
-  USE SF_PAULI, only: pauli_sigma_z
+  USE SF_SPIN, only: pauli_sigma_z
   USE ED_INPUT_VARS
   USE ED_VARS_GLOBAL
   USE ED_AUX_FUNX

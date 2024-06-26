@@ -3,7 +3,7 @@ MODULE ED_AUX_FUNX
   USE ED_VARS_GLOBAL
   USE SF_TIMER
   USE SF_LINALG, only: eye
-  USE SF_PAULI
+  USE SF_SPIN
   USE SF_MISC, only: assert_shape
   USE SF_IOTOOLS, only:free_unit,reg,txtfy
   USE SF_ARRAYS,  only: arange,linspace

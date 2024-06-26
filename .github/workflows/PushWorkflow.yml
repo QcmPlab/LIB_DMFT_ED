@@ -1,4 +1,4 @@
-name: CI LIB_DMFT_ED test workflow 
+name: CI EDIpack2 test workflow 
 
 on: push
 
@@ -7,7 +7,7 @@ defaults:
     shell: bash -l {0}
 
 jobs:
-  test-QcmP:
+  test-EDIpack2:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -32,20 +32,20 @@ jobs:
 
 # Build SciFortran
       - name: Cloning SciFortran
-        run: git clone https://github.com/QcmPlab/SciFortran.git scifor
+        run: git clone https://github.com/aamaricci/SciFortran.git scifor
       - name: Install SciFortran
         run: scifor/bin/ci_setup_scifor.sh
 
-# Build LIB_DMFT_ED
-      - name: Cloning LIB_DMFT_ED
-        run: git clone https://github.com/QcmPlab/LIB_DMFT_ED.git LIB_DMFT_ED
-      - name: Install LIB_DMFT_ED
+# Build EDIpack2
+      - name: Cloning EDIpack2
+        run: git clone https://github.com/aamaricci/EDIpack2.0.git EDIpack2
+      - name: Install EDIpack2
         run: |
           source ~/.scifor_config_user
           export PKG_CONFIG_PATH=~/.pkgconfig.d
           export GLOB_INC=$( pkg-config --cflags scifor )
           export GLOB_LIB=$( pkg-config --libs   scifor  | sed  "s/;/ /g"  | sed 's/\\/  /g' )
-          LIB_DMFT_ED/bin/ci_setup_dmft_ed.sh
+          EDIpack2/bin/ci_setup_edipack2.sh
 
 
 
@@ -55,17 +55,17 @@ jobs:
       - name: Building tests
         run:  |
           source ~/.scifor_config_user
-          source ~/.dmft_ed_config_user
+          source ~/.edipack2_config_user
           export PKG_CONFIG_PATH=~/.pkgconfig.d
-          export GLOB_INC=$( pkg-config --cflags scifor dmft_ed)
-          export GLOB_LIB=$( pkg-config --libs   scifor dmft_ed | sed  "s/;/ /g"  | sed 's/\\/  /g' )
-          cd LIB_DMFT_ED/test
+          export GLOB_INC=$( pkg-config --cflags scifor edipack2)
+          export GLOB_LIB=$( pkg-config --libs   scifor edipack2 | sed  "s/;/ /g"  | sed 's/\\/  /g' )
+          cd EDIpack2/test
           export TERM=xterm
           make all
 
       - name: Testing...
         run: |
-          cd LIB_DMFT_ED/test
+          cd EDIpack2/test
           make test
 
       # - name: Install LCOV

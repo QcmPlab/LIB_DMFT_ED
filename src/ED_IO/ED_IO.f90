@@ -6,7 +6,7 @@ MODULE ED_IO
   USE ED_BATH
   !
   USE SF_LINALG
-  USE SF_PAULI
+  USE SF_SPIN
   USE SF_ARRAYS,  only: linspace,arange
   USE SF_IOTOOLS, only: str,reg,free_unit,splot,sread
   USE SF_MISC,    only: assert_shape

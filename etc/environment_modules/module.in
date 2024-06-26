@@ -6,15 +6,15 @@ set version "(@FULL_VER@)"
 set compiler @CMAKE_Fortran_COMPILER@
 
 proc ModulesHelp { } {
-        puts stderr "\tThis module provides access to DMFT_ED library\n";
+        puts stderr "\tThis module provides access to EDIpack2.0 library\n";
 	puts stderr "\tVersion $version\n"
 	puts stderr "\t compiled with $compiler\n"	
 }
 
-module-whatis "DMFT_ED library in Fortran"
+module-whatis "EDIpack2.0 library in Fortran"
 
 
-setenv       DMFT_ED_ROOT  		 $root
+setenv       EDIPACK2_ROOT  		 $root
 setenv	     FC			 $compiler
 setenv	     F90		 $compiler
 prepend-path LD_LIBRARY_PATH    "$root/lib"
@@ -22,5 +22,5 @@ prepend-path LIBRARY_PATH       "$root/lib"
 prepend-path PATH		"$root/bin"
 prepend-path PKG_CONFIG_PATH	"$root/etc"
 
-puts stderr " > (un)load DMFT_ED $version"
+puts stderr " > (un)load EDIpack2.0 $version"
 #EOF

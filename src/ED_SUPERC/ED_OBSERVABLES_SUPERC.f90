@@ -575,38 +575,38 @@ contains
 
     unit = free_unit()
     open(unit,file="observables_info.ed")
-    write(unit,"(A1,90(A10,6X))") "# *****"
-    write(unit,"(A1,90(A10,6X))") "# dens_last.ed"
+    write(unit,"(A)") "# *****"
+    write(unit,"(A)") "# dens_last.ed"
     write(unit,"(A1,90(A10,6X))") "# ",(reg(txtfy(iorb))//"dens_"//reg(txtfy(iorb)),iorb=1,Norb)
-    write(unit,"(A1,90(A10,6X))") "# *****"
-    write(unit,"(A1,90(A10,6X))") "# docc_last.ed"
+    write(unit,"(A)") "# *****"
+    write(unit,"(A)") "# docc_last.ed"
     write(unit,"(A1,90(A10,6X))") "# ",(reg(txtfy(iorb))//"docc_"//reg(txtfy(iorb)),iorb=1,Norb)
-    write(unit,"(A1,90(A10,6X))") "# *****"
-    write(unit,"(A1,90(A10,6X))") "# dens_up_last.ed"
+    write(unit,"(A)") "# *****"
+    write(unit,"(A)") "# dens_up_last.ed"
     write(unit,"(A1,90(A10,6X))") "# ",(reg(txtfy(iorb))//"dens_up_"//reg(txtfy(iorb)),iorb=1,Norb)
-    write(unit,"(A1,90(A10,6X))") "# *****"
-    write(unit,"(A1,90(A10,6X))") "# dens_dw_last.ed"
+    write(unit,"(A)") "# *****"
+    write(unit,"(A)") "# dens_dw_last.ed"
     write(unit,"(A1,90(A10,6X))") "# ",(reg(txtfy(iorb))//"dens_dw_"//reg(txtfy(iorb)),iorb=1,Norb)
-    write(unit,"(A1,90(A10,6X))") "# *****"
-    write(unit,"(A1,90(A10,6X))") "# magz_last.ed"
+    write(unit,"(A)") "# *****"
+    write(unit,"(A)") "# magz_last.ed"
     write(unit,"(A1,90(A10,6X))") "# ",(reg(txtfy(iorb))//"magz_"//reg(txtfy(iorb)),iorb=1,Norb)
-    write(unit,"(A1,90(A10,6X))") "# *****"
-    write(unit,"(A1,90(A10,6X))") "# Sz2_last.ed"
+    write(unit,"(A)") "# *****"
+    write(unit,"(A)") "# Sz2_last.ed"
     write(unit,"(A1,90(A10,6X))") "# ",((reg(txtfy(iorb+(jorb-1)*Norb))//"Sz2_"//reg(txtfy(iorb)),iorb=1,Norb),jorb=1,Norb)
-    write(unit,"(A1,90(A10,6X))") "# *****"
-    write(unit,"(A1,90(A10,6X))") "# n2_last.ed"
+    write(unit,"(A)") "# *****"
+    write(unit,"(A)") "# n2_last.ed"
     write(unit,"(A1,90(A10,6X))") "# ",((reg(txtfy(iorb+(jorb-1)*Norb))//"n2_"//reg(txtfy(iorb)),iorb=1,Norb),jorb=1,Norb)
-    write(unit,"(A1,90(A10,6X))") "# *****"
-    write(unit,"(A1,90(A10,6X))") "# Z_last.ed"
+    write(unit,"(A)") "# *****"
+    write(unit,"(A)") "# Z_last.ed"
     write(unit,"(A1,90(A10,6X))") "# ",((reg(txtfy(iorb+(ispin-1)*Norb))//"z_"//reg(txtfy(iorb))//"s"//reg(txtfy(ispin)),iorb=1,Norb),ispin=1,Nspin)
-    write(unit,"(A1,90(A10,6X))") "# *****"
-    write(unit,"(A1,90(A10,6X))") "# sig_last.ed"
+    write(unit,"(A)") "# *****"
+    write(unit,"(A)") "# sig_last.ed"
     write(unit,"(A1,90(A10,6X))") "#",((reg(txtfy(iorb+(ispin-1)*Norb))//"sig_"//reg(txtfy(iorb))//"s"//reg(txtfy(ispin)),iorb=1,Norb),ispin=1,Nspin)
-    write(unit,"(A1,90(A10,6X))") "# *****"
-    write(unit,"(A1,90(A10,6X))") "# phisc_last.ed"
+    write(unit,"(A)") "# *****"
+    write(unit,"(A)") "# phisc_last.ed"
     write(unit,"(A1,90(A10,6X))") "# ",((reg(txtfy(iorb+(jorb-1)*Norb))//"phisc_"//reg(txtfy(iorb)),iorb=1,Norb),jorb=1,Norb)
-    write(unit,"(A1,90(A10,6X))") "# *****"
-    write(unit,"(A1,90(A10,6X))") "# imp_last.ed"
+    write(unit,"(A)") "# *****"
+    write(unit,"(A)") "# imp_last.ed"
     write(unit,"(A1,90(A10,6X))") "# ", "1s2tot", "2egs", "3nph", "4w_ph", "5X_ph", "6X2_ph"
     close(unit)
     

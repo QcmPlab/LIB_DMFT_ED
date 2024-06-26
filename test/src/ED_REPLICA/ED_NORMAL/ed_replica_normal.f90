@@ -1,5 +1,5 @@
 program ed_replica_normal
-  USE DMFT_ED
+  USE EDIPACK2
   USE SCIFOR
   USE MPI
   USE SF_MPI
@@ -57,8 +57,8 @@ program ed_replica_normal
   allocate(Smats(Nspin,Nspin,Norb,Norb,Lmats))
   !
   ! Matrices for replica hamiltonian
-  gammaN =kron_pauli( pauli_sigma_0, pauli_tau_0)
-  gammaE0=kron_pauli( pauli_sigma_0, pauli_tau_x )
+  gammaN =kron( pauli_sigma_0, pauli_tau_0)
+  gammaE0=kron( pauli_sigma_0, pauli_tau_x )
   !
   allocate(Hloc(Nspin,Nspin,Norb,Norb))
   allocate(H0(Nso))

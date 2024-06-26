@@ -1,5 +1,5 @@
 program ed_replica_superc
-  USE DMFT_ED
+  USE EDIPACK2
   USE SCIFOR
   USE MPI
   USE SF_MPI
@@ -60,9 +60,9 @@ program ed_replica_superc
   allocate(Smats(2,Nspin,Nspin,Norb,Norb,Lmats))
   !
   ! Matrices for replica hamiltonian in Nambu representation
-  gammaN    =kron_pauli( pauli_sigma_z, pauli_tau_0)
-  gammaPhiAA=kron_pauli( pauli_sigma_x, pauli_tau_0 )
-  gammaPhiAB=kron_pauli( pauli_sigma_x, pauli_tau_x )
+  gammaN    =kron( pauli_sigma_z, pauli_tau_0)
+  gammaPhiAA=kron( pauli_sigma_x, pauli_tau_0 )
+  gammaPhiAB=kron( pauli_sigma_x, pauli_tau_x )
   !
   allocate(Hloc(Nspin,Nspin,Norb,Norb))
   allocate(H0(Nso))

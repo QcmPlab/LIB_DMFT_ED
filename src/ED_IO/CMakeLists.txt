@@ -1,4 +1,4 @@
-# DMFT_ED library
+# EDIpack2 library
 FILE(GLOB ED_IO_SRC
   ED_IO.f90  
   )

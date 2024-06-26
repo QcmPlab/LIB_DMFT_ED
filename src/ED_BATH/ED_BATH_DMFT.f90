@@ -230,7 +230,7 @@ contains
           diagonal_hsym = is_diagonal(Hreplica_basis(isym)%O)
           one_lambdaval = Hreplica_lambda(Nbath,isym)
           all_lambdas_are_equal = all(Hreplica_lambda(:,isym)==one_lambdaval)
-          if(diagonal_hsym.AND.all_lambdas_are_equal)then
+          if(diagonal_hsym.AND.all_lambdas_are_equal.AND.Nbath>1)then
              offset=linspace(-ed_offset_bath,ed_offset_bath,Nbath)
              if(is_identity(Hreplica_basis(isym)%O).AND.mod(Nbath,2)==0)then
                 offset(Nbath/2) = max(-1.d-1,offset(Nbath/2))
@@ -274,7 +274,7 @@ contains
           diagonal_hsym = is_diagonal(Hgeneral_basis(isym)%O)
           one_lambdaval = Hgeneral_lambda(Nbath,isym)
           all_lambdas_are_equal = all(Hgeneral_lambda(:,isym)==one_lambdaval)
-          if(diagonal_hsym.AND.all_lambdas_are_equal)then
+          if(diagonal_hsym.AND.all_lambdas_are_equal.AND.Nbath>1)then
              offset=linspace(-ed_offset_bath,ed_offset_bath,Nbath)
              if(is_identity(Hgeneral_basis(isym)%O).AND.mod(Nbath,2)==0)then
                 offset(Nbath/2) = max(-1.d-1,offset(Nbath/2))
@@ -462,7 +462,7 @@ contains
                "Vbk_l"//reg(str(iorb))//"_s"//reg(str(ispin)),&
                iorb=1,Norb), ispin=1,Nspin)
           do i=1,Nbath
-             write(unit,"(90(ES21.12,1X))")((&
+             write(unit_,"(90(ES21.12,1X))")((&
                   dmft_bath_%e(ispin,iorb,i),&
                   dmft_bath_%v(ispin,iorb,i),&
                   dmft_bath_%u(ispin,iorb,i),&

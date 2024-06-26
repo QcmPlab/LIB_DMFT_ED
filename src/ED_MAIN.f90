@@ -203,8 +203,8 @@ contains
     !
     check   = check_bath_dimension(bath)
     if(.not.check)stop "ED_SOLVE_SINGLE Error: wrong bath dimensions"
-    !
-    if(MpiMaster)call save_input_file(str(ed_input_file))
+    !  
+    if(MpiMaster.and.fmpi_)call save_input_file(str(ed_input_file))
     !
     call allocate_dmft_bath(dmft_bath)
     call set_dmft_bath(bath,dmft_bath)
@@ -345,6 +345,9 @@ contains
           lanc_nstates_total = neigen_total_ineq(ilat)
           !
           call ed_set_Hloc(Hloc_ineq(ilat,:,:,:,:))
+          !
+          if(MPI_MASTER)call save_input_file(str(ed_input_file))
+          !
           call ed_solve_single(bath(ilat,:),sflag=iflag_,fmpi=mpi_lanc_)
           !
           neigen_sectortmp(ilat,:)   = neigen_sector(:)
